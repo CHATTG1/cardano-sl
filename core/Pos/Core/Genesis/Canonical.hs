@@ -44,9 +44,9 @@ import           Pos.Crypto (HasCryptoConfiguration, ProxyCert, ProxySecretKey (
                              RedeemPublicKey, Signature, decodeAbstractHash, fromAvvmPk,
                              fullProxyCertHexF, fullPublicKeyF, fullSignatureHexF, hashHexF,
                              parseFullProxyCert, parseFullPublicKey, parseFullSignature,
-                             redeemPkB64UrlF, toVerPsk)
+                             redeemPkB64UrlF)
 import           Pos.Crypto.Configuration (ProtocolMagic (..))
-import           Pos.Util.Verification (Ver (..), verMToEither)
+import           Pos.Util.Verification (mkUnver, runVerify)
 
 ----------------------------------------------------------------------------
 -- Primitive standard/3rdparty types
@@ -153,7 +153,7 @@ instance Monad m => ToObjectKey m Address where
 instance Monad m => ToJSON m Address where
     toJSON = fmap JSString . toObjectKey
 
-instance Monad m => ToJSON m (ProxySecretKey 'Ver HeavyDlgIndex) where
+instance Monad m => ToJSON m (ProxySecretKey HeavyDlgIndex) where
     toJSON UnsafeProxySecretKey {..} =
         -- omega is encoded as a number, because in genesis we always
         -- set it to 0.
@@ -386,7 +386,7 @@ instance ReportSchemaErrors m => FromJSON m Address where
     fromJSON = tryParseString decodeTextAddress
 
 instance (ReportSchemaErrors m, HasCryptoConfiguration) =>
-         FromJSON m (ProxySecretKey 'Ver HeavyDlgIndex) where
+         FromJSON m (ProxySecretKey HeavyDlgIndex) where
     fromJSON obj = do
         pskOmega <-
             HeavyDlgIndex . fromIntegral @Int54 <$> fromJSField obj "omega"
@@ -394,7 +394,7 @@ instance (ReportSchemaErrors m, HasCryptoConfiguration) =>
         pskDelegatePk <- fromJSField obj "delegatePk"
         pskCert <- fromJSField obj "cert"
         either (failExp . show) pure $
-            verMToEither $ toVerPsk $ UnsafeProxySecretKey {..}
+            runVerify $ mkUnver $ UnsafeProxySecretKey {..}
 
 instance ReportSchemaErrors m => FromJSON m SoftforkRule where
     fromJSON obj = do

@@ -548,27 +548,27 @@ instance GSerialiseEncode a => GSerialiseEncode (G.M1 i c a) where
 instance GSerialiseDecode a => GSerialiseDecode (G.M1 i c a) where
     gdecode = G.M1 <$> gdecode
 
-instance Bi a => GSerialiseEncode (G.K1 i a) where
+instance BiEnc a => GSerialiseEncode (G.K1 i a) where
     -- Constructor field (Could only appear in one-field & one-constructor
     -- data types). In all other cases we go through GSerialise{Sum,Prod}
     gencode (G.K1 a) = E.encodeListLen 1
                      <> encode a
 
-instance Bi a => GSerialiseDecode (G.K1 i a) where
+instance BiDec a => GSerialiseDecode (G.K1 i a) where
     gdecode = do
       n <- D.decodeListLenCanonical
       when (n /= 1) $
         fail "expect list of length 1"
       G.K1 <$> decode
 
-instance (GSerialiseProd f, GSerialiseProd g) => GSerialiseEncode (f G.:*: g) where
+instance (GSerialiseProdEnc f, GSerialiseProdEnc g) => GSerialiseEncode (f G.:*: g) where
     -- Products are serialised as N-tuples with 0 constructor tag
     gencode (f G.:*: g)
         = E.encodeListLen (nFields (Proxy :: Proxy (f G.:*: g)))
        <> encodeSeq f
        <> encodeSeq g
 
-instance (GSerialiseProd f, GSerialiseProd g) => GSerialiseDecode (f G.:*: g) where
+instance (GSerialiseProdDec f, GSerialiseProdDec g) => GSerialiseDecode (f G.:*: g) where
     gdecode = do
       let nF = nFields (Proxy :: Proxy (f G.:*: g))
       n <- D.decodeListLenCanonical
@@ -579,14 +579,14 @@ instance (GSerialiseProd f, GSerialiseProd g) => GSerialiseDecode (f G.:*: g) wh
       !g <- gdecodeSeq
       return $ f G.:*: g
 
-instance (GSerialiseSum f, GSerialiseSum g) => GSerialiseEncode (f G.:+: g) where
+instance (GSerialiseSumEnc f, GSerialiseSumEnc g) => GSerialiseEncode (f G.:+: g) where
     -- Sum types are serialised as N-tuples and first element is
     -- constructor tag
     gencode a = E.encodeListLen (numOfFields a + 1)
              <> encode (conNumber a)
              <> encodeSum a
 
-instance (GSerialiseSum f, GSerialiseSum g) => GSerialiseDecode (f G.:+: g) where
+instance (GSerialiseSumDec f, GSerialiseSumDec g) => GSerialiseDecode (f G.:+: g) where
     gdecode = do
         n <- D.decodeListLenCanonical
         -- TODO FIXME: Again signedness
@@ -599,69 +599,89 @@ instance (GSerialiseSum f, GSerialiseSum g) => GSerialiseDecode (f G.:+: g) wher
         decodeSum nCon
 
 
+
 -- | Serialization of product types
-class GSerialiseProd f where
+class GSerialiseProdBase (f :: * -> *) where
     -- | Number of fields in product type
     nFields   :: Proxy f -> Word
+
+class GSerialiseProdBase f => GSerialiseProdEnc f where
     -- | Encode fields sequentially without writing header
     encodeSeq :: f a -> E.Encoding
+
+class GSerialiseProdBase f => GSerialiseProdDec f where
     -- | Decode fields sequentially without reading header
     gdecodeSeq :: D.Decoder s (f a)
 
-instance (GSerialiseProd f, GSerialiseProd g) => GSerialiseProd (f G.:*: g) where
+instance (GSerialiseProdBase f, GSerialiseProdBase g) =>
+         GSerialiseProdBase (f G.:*: g) where
     nFields _ = nFields (Proxy :: Proxy f) + nFields (Proxy :: Proxy g)
-    encodeSeq (f G.:*: g) = encodeSeq f <> encodeSeq g
-    gdecodeSeq = do !f <- gdecodeSeq
-                    !g <- gdecodeSeq
-                    return (f G.:*: g)
 
-instance GSerialiseProd G.U1 where
+instance (GSerialiseProdEnc f, GSerialiseProdEnc g) =>
+         GSerialiseProdEnc (f G.:*: g) where
+    encodeSeq (f G.:*: g) = encodeSeq f <> encodeSeq g
+
+instance (GSerialiseProdDec f, GSerialiseProdDec g) =>
+         GSerialiseProdDec (f G.:*: g) where
+    gdecodeSeq = do
+        !f <- gdecodeSeq
+        !g <- gdecodeSeq
+        return (f G.:*: g)
+
+instance GSerialiseProdBase G.U1 where
     -- N.B. Could only be reached when one of constructors in sum type
     --      don't have parameters
     nFields   _ = 0
+instance GSerialiseProdEnc G.U1 where
     encodeSeq _ = mempty
+instance GSerialiseProdDec G.U1 where
     gdecodeSeq  = return G.U1
 
-instance (Bi a) => GSerialiseProd (G.K1 i a) where
+instance GSerialiseProdBase (G.K1 i a) where
     -- Ordinary field
     nFields    _     = 1
+instance BiEnc a => GSerialiseProdEnc (G.K1 i a) where
     encodeSeq (G.K1 f) = encode f
+instance BiDec a => GSerialiseProdDec (G.K1 i a) where
     gdecodeSeq       = G.K1 <$> decode
 
-instance (i ~ G.S, GSerialiseProd f) => GSerialiseProd (G.M1 i c f) where
+instance (i ~ G.S, GSerialiseProdBase f) => GSerialiseProdBase (G.M1 i c f) where
     -- We skip metadata
     nFields     _     = 1
+instance (i ~ G.S, GSerialiseProdEnc f) => GSerialiseProdEnc (G.M1 i c f) where
     encodeSeq  (G.M1 f) = encodeSeq f
+instance (i ~ G.S, GSerialiseProdDec f) => GSerialiseProdDec (G.M1 i c f) where
     gdecodeSeq        = G.M1 <$> gdecodeSeq
+
+
 
 -- | Serialization of sum types
 --
-class GSerialiseSum f where
+class GSerialiseSumBase f where
     -- | Number of constructor of given value
     conNumber   :: f a -> Word
     -- | Number of fields of given value
     numOfFields :: f a -> Word
-    -- | Encode field
-    encodeSum   :: f a  -> E.Encoding
-
-    -- | Decode field
-    decodeSum     :: Word -> D.Decoder s (f a)
     -- | Number of constructors
     nConstructors :: Proxy f -> Word
     -- | Number of fields for given constructor number
     fieldsForCon  :: Proxy f -> Word -> D.Decoder s Word
 
-instance (GSerialiseSum f, GSerialiseSum g) => GSerialiseSum (f G.:+: g) where
+class GSerialiseSumBase f => GSerialiseSumEnc f where
+    -- | Encode field
+    encodeSum   :: f a  -> E.Encoding
+
+class GSerialiseSumBase f => GSerialiseSumDec f where
+    -- | Decode field
+    decodeSum     :: Word -> D.Decoder s (f a)
+
+instance (GSerialiseSumBase f, GSerialiseSumBase g) => GSerialiseSumBase (f G.:+: g) where
     conNumber x = case x of
       G.L1 f -> conNumber f
       G.R1 g -> conNumber g + nConstructors (Proxy :: Proxy f)
     numOfFields x = case x of
       G.L1 f -> numOfFields f
       G.R1 g -> numOfFields g
-    encodeSum x = case x of
-      G.L1 f -> encodeSum f
-      G.R1 g -> encodeSum g
-
     nConstructors _ = nConstructors (Proxy :: Proxy f)
                     + nConstructors (Proxy :: Proxy g)
 
@@ -670,18 +690,27 @@ instance (GSerialiseSum f, GSerialiseSum g) => GSerialiseSum (f G.:+: g) where
       where
         nL = nConstructors (Proxy :: Proxy f)
 
+instance (GSerialiseSumEnc f, GSerialiseSumEnc g) => GSerialiseSumEnc (f G.:+: g) where
+    encodeSum x = case x of
+      G.L1 f -> encodeSum f
+      G.R1 g -> encodeSum g
+
+instance (GSerialiseSumDec f, GSerialiseSumDec g) => GSerialiseSumDec (f G.:+: g) where
     decodeSum nCon | nCon < nL = G.L1 <$> decodeSum nCon
                    | otherwise = G.R1 <$> decodeSum (nCon - nL)
       where
         nL = nConstructors (Proxy :: Proxy f)
 
-instance (i ~ G.C, GSerialiseProd f) => GSerialiseSum (G.M1 i c f) where
-    conNumber    _     = 0
-    numOfFields  _     = nFields (Proxy :: Proxy f)
-    encodeSum   (G.M1 f) = encodeSeq f
-
+instance (i ~ G.C, GSerialiseProdBase f) => GSerialiseSumBase (G.M1 i c f) where
+    conNumber    _   = 0
+    numOfFields  _   = nFields (Proxy :: Proxy f)
     nConstructors  _ = 1
     fieldsForCon _ 0 = return $ nFields (Proxy :: Proxy f)
     fieldsForCon _ _ = fail "Bad constructor number"
+
+instance (i ~ G.C, GSerialiseProdEnc f) => GSerialiseSumEnc (G.M1 i c f) where
+    encodeSum   (G.M1 f) = encodeSeq f
+
+instance (i ~ G.C, GSerialiseProdDec f) => GSerialiseSumDec (G.M1 i c f) where
     decodeSum      0 = G.M1 <$> gdecodeSeq
     decodeSum      _ = fail "bad constructor number"

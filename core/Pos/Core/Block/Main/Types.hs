@@ -29,18 +29,17 @@ import           Pos.Core.Slotting.Types (SlotId (..))
 import           Pos.Core.Update.Types (BlockVersion, SoftwareVersion)
 import           Pos.Crypto (Hash, Signature)
 import           Pos.Data.Attributes (Attributes, areAttributesKnown)
-import           Pos.Util.Verification (Ver (..))
 
 -- | Represents blockchain consisting of main blocks, i. e. blocks
 -- with actual payload (transactions, SSC, update system, etc.).
-data MainBlockchain (v :: Ver)
+data MainBlockchain
 
 -- | Data to be signed in main block.
-data MainToSign v
+data MainToSign
     = MainToSign
     { _msHeaderHash  :: !HeaderHash  -- ^ Hash of previous header
                                      --    in the chain
-    , _msBodyProof   :: !(BodyProof (MainBlockchain v))
+    , _msBodyProof   :: !(BodyProof MainBlockchain)
     , _msSlot        :: !SlotId
     , _msChainDiff   :: !ChainDifficulty
     , _msExtraHeader :: !MainExtraHeaderData
@@ -50,15 +49,15 @@ data MainToSign v
 -- issuer or delegated signature having a constraint on epoch indices
 -- (it means the signature is valid only if block's slot id has epoch
 -- inside the constrained interval).
-data BlockSignature (v :: Ver)
-    = BlockSignature (Signature (MainToSign v))
-    | BlockPSignatureLight (ProxySigLight v (MainToSign v))
-    | BlockPSignatureHeavy (ProxySigHeavy v (MainToSign v))
+data BlockSignature
+    = BlockSignature (Signature MainToSign)
+    | BlockPSignatureLight (ProxySigLight MainToSign)
+    | BlockPSignatureHeavy (ProxySigHeavy MainToSign)
     deriving (Show, Eq, Generic)
 
-instance NFData (BodyProof (MainBlockchain v)) => NFData (BlockSignature v)
+instance NFData (BodyProof MainBlockchain) => NFData BlockSignature
 
-instance Buildable (BlockSignature v) where
+instance Buildable BlockSignature where
     build (BlockSignature s)       = bprint ("BlockSignature: "%build) s
     build (BlockPSignatureLight s) = bprint ("BlockPSignatureLight: "%build) s
     build (BlockPSignatureHeavy s) = bprint ("BlockPSignatureHeavy: "%build) s
@@ -112,8 +111,8 @@ instance Buildable MainExtraBodyData where
         | otherwise = bprint ("extra data has attributes: "%build) attrs
 
 -- | Header of generic main block.
-type MainBlockHeader v = GenericBlockHeader (MainBlockchain v)
+type MainBlockHeader = GenericBlockHeader MainBlockchain
 
 -- | MainBlock is a block with transactions and MPC messages. It's the
 -- main part of our consensus algorithm.
-type MainBlock v = GenericBlock (MainBlockchain v)
+type MainBlock = GenericBlock MainBlockchain

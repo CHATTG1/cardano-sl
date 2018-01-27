@@ -31,11 +31,14 @@ import           Pos.Util.Util (eitherToThrow)
 -- verification.
 newtype Unver a = Unver
     { getUnverUnsafe :: a
-    } deriving (Functor, Eq, Ord)
+    } deriving (Eq, Ord, Functor)
 
 instance Applicative Unver where
     pure = Unver
     (Unver a) <*> (Unver b) = Unver (a b)
+
+instance Monad Unver where
+    (Unver a) >>= foo = foo a
 
 mkUnver :: a -> Unver a
 mkUnver = Unver

@@ -6,25 +6,33 @@ module Pos.Binary.Core.Blockchain
 
 import           Universum
 
-import           Pos.Binary.Class (Bi (..), encodeListLen, enforceSize)
+import           Pos.Binary.Class (BiDec (..), BiEnc (..), encodeListLen, enforceSize)
 import           Pos.Binary.Core.Common ()
 import qualified Pos.Core.Block.Blockchain as T
 import           Pos.Crypto.Configuration (HasCryptoConfiguration, getProtocolMagic, protocolMagic)
 
 instance ( Typeable b
-         , Bi (T.BHeaderHash b)
-         , Bi (T.BodyProof b)
-         , Bi (T.ConsensusData b)
-         , Bi (T.ExtraHeaderData b)
+         , BiEnc (T.BHeaderHash b)
+         , BiEnc (T.BodyProof b)
+         , BiEnc (T.ConsensusData b)
+         , BiEnc (T.ExtraHeaderData b)
          , HasCryptoConfiguration
          ) =>
-         Bi (T.GenericBlockHeader b) where
+         BiEnc (T.GenericBlockHeader b) where
     encode bh =  encodeListLen 5
               <> encode (getProtocolMagic protocolMagic)
               <> encode (T._gbhPrevBlock bh)
               <> encode (T._gbhBodyProof bh)
               <> encode (T._gbhConsensus bh)
               <> encode (T._gbhExtra bh)
+instance ( Typeable b
+         , BiDec (T.BHeaderHash b)
+         , BiDec (T.BodyProof b)
+         , BiDec (T.ConsensusData b)
+         , BiDec (T.ExtraHeaderData b)
+         , HasCryptoConfiguration
+         ) =>
+         BiDec (T.GenericBlockHeader b) where
     decode = do
         enforceSize "GenericBlockHeader b" 5
         blockMagic <- decode
@@ -37,19 +45,29 @@ instance ( Typeable b
         pure T.UnsafeGenericBlockHeader {..}
 
 instance ( Typeable b
-         , Bi (T.BHeaderHash b)
-         , Bi (T.BodyProof b)
-         , Bi (T.ConsensusData b)
-         , Bi (T.ExtraHeaderData b)
-         , Bi (T.Body b)
-         , Bi (T.ExtraBodyData b)
+         , BiEnc (T.BHeaderHash b)
+         , BiEnc (T.BodyProof b)
+         , BiEnc (T.ConsensusData b)
+         , BiEnc (T.ExtraHeaderData b)
+         , BiEnc (T.Body b)
+         , BiEnc (T.ExtraBodyData b)
          , HasCryptoConfiguration
          ) =>
-         Bi (T.GenericBlock b) where
+         BiEnc (T.GenericBlock b) where
     encode gb =  encodeListLen 3
               <> encode (T._gbHeader gb)
               <> encode (T._gbBody gb)
               <> encode (T._gbExtra gb)
+instance ( Typeable b
+         , BiDec (T.BHeaderHash b)
+         , BiDec (T.BodyProof b)
+         , BiDec (T.ConsensusData b)
+         , BiDec (T.ExtraHeaderData b)
+         , BiDec (T.Body b)
+         , BiDec (T.ExtraBodyData b)
+         , HasCryptoConfiguration
+         ) =>
+         BiDec (T.GenericBlock b) where
     decode = do
         enforceSize "GenericBlock" 3
         _gbHeader <- ({-# SCC "decode_block_header" #-} decode)

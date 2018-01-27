@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE KindSignatures #-}
 
 -- | Types defining the genesis blockchain.
@@ -20,7 +19,6 @@ import           Formatting (bprint, build, (%))
 
 import           Pos.Core.Block.Blockchain (GenericBlock (..), GenericBlockHeader (..))
 import           Pos.Data.Attributes (Attributes, areAttributesKnown)
-import           Pos.Util.Verification (Ver (..))
 
 -- | Represents genesis block header attributes.
 type GenesisHeaderAttributes = Attributes ()
@@ -59,10 +57,10 @@ instance Buildable GenesisExtraBodyData where
 -- necessary. However, it is good idea to store list of leaders
 -- explicitly, because calculating it may be expensive operation. For
 -- example, it is useful for SPV-clients.
-data GenesisBlockchain (v :: Ver)
+data GenesisBlockchain
 
 -- | Header of Genesis block.
-type GenesisBlockHeader v = GenericBlockHeader (GenesisBlockchain v)
+type GenesisBlockHeader = GenericBlockHeader GenesisBlockchain
 
 -- | Genesis block parametrized by 'GenesisBlockchain'.
-type GenesisBlock v = GenericBlock (GenesisBlockchain v)
+type GenesisBlock = GenericBlock GenesisBlockchain

@@ -107,48 +107,48 @@ makeLenses 'MainConsensusData
 ----------------------------------------------------------------------------
 
 -- | Lens from 'MainBlockHeader' to 'HeaderHash' of its parent.
-mainHeaderPrevBlock :: Lens' (MainBlockHeader v) HeaderHash
+mainHeaderPrevBlock :: Lens' MainBlockHeader HeaderHash
 mainHeaderPrevBlock = gbhPrevBlock
 
 -- | Lens from 'MainBlockHeader' to 'MainProof'.
 mainHeaderProof ::
-       Lens' (MainBlockHeader v) (BodyProof (MainBlockchain v))
+       Lens' MainBlockHeader (BodyProof MainBlockchain)
 mainHeaderProof = gbhBodyProof
 
 -- | Lens from 'MainBlockHeader' to 'SlotId'.
-mainHeaderSlot :: Lens' (MainBlockHeader v) SlotId
+mainHeaderSlot :: Lens' MainBlockHeader SlotId
 mainHeaderSlot = gbhConsensus . mcdSlot
 
 -- | Lens from 'MainBlockHeader' to 'PublicKey'.
-mainHeaderLeaderKey :: Lens' (MainBlockHeader v) PublicKey
+mainHeaderLeaderKey :: Lens' MainBlockHeader PublicKey
 mainHeaderLeaderKey = gbhConsensus . mcdLeaderKey
 
 -- | Lens from 'MainBlockHeader' to 'ChainDifficulty'.
-mainHeaderDifficulty :: Lens' (MainBlockHeader v) ChainDifficulty
+mainHeaderDifficulty :: Lens' MainBlockHeader ChainDifficulty
 mainHeaderDifficulty = gbhConsensus . mcdDifficulty
 
 -- | Lens from 'MainBlockHeader' to 'Signature'.
-mainHeaderSignature :: Lens' (MainBlockHeader v) (BlockSignature v)
+mainHeaderSignature :: Lens' MainBlockHeader BlockSignature
 mainHeaderSignature = gbhConsensus . mcdSignature
 
 -- | Lens from 'MainBlockHeader' to 'BlockVersion'.
 mainHeaderBlockVersion ::
-       Lens' (MainBlockHeader v) BlockVersion
+       Lens' MainBlockHeader BlockVersion
 mainHeaderBlockVersion = gbhExtra . mehBlockVersion
 
 -- | Lens from 'MainBlockHeader' to 'SoftwareVersion'.
 mainHeaderSoftwareVersion ::
-       Lens' (MainBlockHeader v) SoftwareVersion
+       Lens' MainBlockHeader SoftwareVersion
 mainHeaderSoftwareVersion = gbhExtra . mehSoftwareVersion
 
 -- | Lens from 'MainBlockHeader' to 'BlockHeaderAttributes'.
 mainHeaderAttributes ::
-       Lens' (MainBlockHeader v) BlockHeaderAttributes
+       Lens' MainBlockHeader BlockHeaderAttributes
 mainHeaderAttributes = gbhExtra . mehAttributes
 
 -- | Lens from 'MainBlockHeader' to 'MainExtraBodyData'
 mainHeaderEBDataProof ::
-       Lens' (MainBlockHeader v) (Hash MainExtraBodyData)
+       Lens' MainBlockHeader (Hash MainExtraBodyData)
 mainHeaderEBDataProof = gbhExtra . mehEBDataProof
 
 ----------------------------------------------------------------------------
@@ -158,11 +158,11 @@ mainHeaderEBDataProof = gbhExtra . mehEBDataProof
 makeLenses 'MainBody
 
 -- | Lens for transaction tree in main block body.
-mbTxs :: Lens' (Body (MainBlockchain v)) ([Tx])
+mbTxs :: Lens' (Body MainBlockchain) ([Tx])
 mbTxs = mbTxPayload . txpTxs
 
 -- | Lens for witness list in main block body.
-mbWitnesses :: Lens' (Body (MainBlockchain v)) [TxWitness]
+mbWitnesses :: Lens' (Body MainBlockchain) [TxWitness]
 mbWitnesses = mbTxPayload . txpWitnesses
 
 ----------------------------------------------------------------------------
@@ -170,65 +170,65 @@ mbWitnesses = mbTxPayload . txpWitnesses
 ----------------------------------------------------------------------------
 
 -- | Lens from 'MainBlock' to 'HeaderHash' of its parent.
-mainBlockPrevBlock :: Lens' (MainBlock v) HeaderHash
+mainBlockPrevBlock :: Lens' MainBlock HeaderHash
 mainBlockPrevBlock = gbPrevBlock
 
 -- | Lens from 'MainBlock' to 'MainProof'.
-mainBlockProof :: Lens' (MainBlock v) (BodyProof (MainBlockchain v))
+mainBlockProof :: Lens' MainBlock (BodyProof MainBlockchain)
 mainBlockProof = gbHeader . mainHeaderProof
 
 -- | Lens from 'MainBlock' to 'SlotId'.
-mainBlockSlot :: Lens' (MainBlock v) SlotId
+mainBlockSlot :: Lens' MainBlock SlotId
 mainBlockSlot = gbHeader . mainHeaderSlot
 
 -- | Lens from 'MainBlock' to 'PublicKey'.
-mainBlockLeaderKey :: Lens' (MainBlock v) PublicKey
+mainBlockLeaderKey :: Lens' MainBlock PublicKey
 mainBlockLeaderKey = gbHeader . mainHeaderLeaderKey
 
 -- | Lens from 'MainBlock' to 'ChainDifficulty'.
-mainBlockDifficulty :: Lens' (MainBlock v) ChainDifficulty
+mainBlockDifficulty :: Lens' MainBlock ChainDifficulty
 mainBlockDifficulty = gbHeader . mainHeaderDifficulty
 
 -- | Lens from 'MainBlock' to 'Signature'.
-mainBlockSignature :: Lens' (MainBlock v) (BlockSignature v)
+mainBlockSignature :: Lens' MainBlock BlockSignature
 mainBlockSignature = gbHeader . mainHeaderSignature
 
 -- | Lens from 'MainBlock' to 'BlockVersion'.
 mainBlockBlockVersion ::
-       Lens' (MainBlock v) BlockVersion
+       Lens' MainBlock BlockVersion
 mainBlockBlockVersion = gbHeader . mainHeaderBlockVersion
 
 -- | Lens from 'MainBlock' to 'SoftwareVersion'.
 mainBlockSoftwareVersion ::
-       Lens' (MainBlock v) SoftwareVersion
+       Lens' MainBlock SoftwareVersion
 mainBlockSoftwareVersion = gbHeader . mainHeaderSoftwareVersion
 
 -- | Lens from 'MainBlock' to 'BlockHeaderAttributes'.
 mainBlockHeaderAttributes ::
-       Lens' (MainBlock v) BlockHeaderAttributes
+       Lens' MainBlock BlockHeaderAttributes
 mainBlockHeaderAttributes = gbHeader . mainHeaderAttributes
 
 -- | Lens from 'MainBlock' to proof (hash) of 'MainExtraBodyData'.
 mainBlockEBDataProof ::
-       Lens' (MainBlock v) (Hash MainExtraBodyData)
+       Lens' MainBlock (Hash MainExtraBodyData)
 mainBlockEBDataProof = gbHeader . mainHeaderEBDataProof
 
 -- | Lens from 'MainBlock' to 'TxPayload'.
-mainBlockTxPayload :: Lens' (MainBlock v) TxPayload
+mainBlockTxPayload :: Lens' MainBlock TxPayload
 mainBlockTxPayload = gbBody . mbTxPayload
 
 -- | Lens from 'MainBlock' to 'SscPayload'.
-mainBlockSscPayload :: Lens' (MainBlock v) SscPayload
+mainBlockSscPayload :: Lens' MainBlock SscPayload
 mainBlockSscPayload = gbBody . mbSscPayload
 
 -- | Lens from 'MainBlock' to 'UpdatePayload'.
-mainBlockUpdatePayload :: Lens' (MainBlock v) UpdatePayload
+mainBlockUpdatePayload :: Lens' MainBlock UpdatePayload
 mainBlockUpdatePayload = gbBody . mbUpdatePayload
 
 -- | Lens from 'MainBlock' to 'DlgPayload'.
-mainBlockDlgPayload :: Lens' (MainBlock v) (DlgPayload v)
+mainBlockDlgPayload :: Lens' MainBlock DlgPayload
 mainBlockDlgPayload = gbBody . mbDlgPayload
 
 -- | Lens from 'MainBlock' to 'BlockBodyAttributes'.
-mainBlockAttributes :: Lens' (MainBlock v) BlockBodyAttributes
+mainBlockAttributes :: Lens' MainBlock BlockBodyAttributes
 mainBlockAttributes = gbExtra . mebAttributes

@@ -1,5 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-
 -- | Core delegation types.
 module Pos.Core.Delegation.Types
        (
@@ -12,25 +10,21 @@ module Pos.Core.Delegation.Types
        , ProxySKHeavy
 
        , DlgPayload (..)
-       , toVerUnsafeDlgPayload
        , DlgProof
        , mkDlgProof
        ) where
 
 import           Universum
 
-import           Data.Coerce (coerce)
 import           Data.Default (Default (def))
 import qualified Data.Set as S
 import qualified Data.Text.Buildable
 import           Formatting (bprint, build, int, (%))
 import           Serokell.Util (listJson, pairF)
 
-import           Pos.Binary.Class (Bi)
+import           Pos.Binary.Class (BiEnc)
 import           Pos.Core.Slotting.Types (EpochIndex)
-import           Pos.Crypto (Hash, ProxySecretKey (..), ProxySignature, unsafeHash)
-import           Pos.Util.Verification (Ver (..))
-
+import           Pos.Crypto (Hash, ProxySecretKey (..), ProxySignature, hash)
 ----------------------------------------------------------------------------
 -- Proxy signatures and signing keys
 ----------------------------------------------------------------------------
@@ -53,10 +47,10 @@ instance Buildable LightDlgIndices where
 
 -- | Light delegation proxy signature, that holds a pair of epoch
 -- indices.
-type ProxySigLight v a = ProxySignature v LightDlgIndices a
+type ProxySigLight a = ProxySignature LightDlgIndices a
 
 -- | Same alias for the proxy secret key (see 'ProxySigLight').
-type ProxySKLight v = ProxySecretKey v LightDlgIndices
+type ProxySKLight = ProxySecretKey LightDlgIndices
 
 
 -- | Witness for heavy delegation signature -- epoch in which
@@ -73,10 +67,10 @@ instance Buildable HeavyDlgIndex where
     build (HeavyDlgIndex i) = bprint build i
 
 -- | Simple proxy signature without ttl/epoch index constraints.
-type ProxySigHeavy v a = ProxySignature v HeavyDlgIndex a
+type ProxySigHeavy a = ProxySignature HeavyDlgIndex a
 
 -- | Heavy delegation PSK.
-type ProxySKHeavy v = ProxySecretKey v HeavyDlgIndex
+type ProxySKHeavy = ProxySecretKey HeavyDlgIndex
 
 ----------------------------------------------------------------------------
 -- Payload
@@ -84,25 +78,22 @@ type ProxySKHeavy v = ProxySecretKey v HeavyDlgIndex
 
 -- | 'DlgPayload' is put into 'MainBlock' and is a set of heavyweight
 -- proxy signing keys.
-newtype DlgPayload v = UnsafeDlgPayload
-    { getDlgPayload :: Set (ProxySKHeavy v)
+newtype DlgPayload = UnsafeDlgPayload
+    { getDlgPayload :: Set ProxySKHeavy
     } deriving (Show, Eq, Generic, NFData)
 
-instance Default (DlgPayload v) where
+instance Default DlgPayload where
     def = UnsafeDlgPayload mempty
 
-instance Buildable (DlgPayload v) where
+instance Buildable DlgPayload where
     build (UnsafeDlgPayload psks) =
         bprint
             ("proxy signing keys ("%int%" items): "%listJson%"\n")
             (S.size psks) (toList psks)
 
-toVerUnsafeDlgPayload :: DlgPayload 'Unver -> DlgPayload 'Ver
-toVerUnsafeDlgPayload = undefined
-
 -- | Proof of delegation payload.
-type DlgProof = Hash (DlgPayload 'Ver)
+type DlgProof = Hash DlgPayload
 
 -- | Creates 'DlgProof' out of delegation payload.
-mkDlgProof :: (Bi (DlgPayload 'Unver)) => DlgPayload 'Unver -> DlgProof
-mkDlgProof p = unsafeHash p
+mkDlgProof :: BiEnc DlgPayload => DlgPayload -> DlgProof
+mkDlgProof = hash

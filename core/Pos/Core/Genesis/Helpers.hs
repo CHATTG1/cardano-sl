@@ -1,5 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-
 -- | Helper functions related to genesis types.
 
 module Pos.Core.Genesis.Helpers
@@ -22,12 +20,11 @@ import           Pos.Core.Common (Address, Coin, StakeholderId, addressHash, dec
 import           Pos.Core.Delegation.Types (ProxySKHeavy)
 import           Pos.Core.Genesis.Types (GenesisDelegation (..), GenesisNonAvvmBalances (..))
 import           Pos.Crypto.Signing (ProxySecretKey (..), isSelfSignedPsk)
-import           Pos.Util.Verification (Ver (..))
 
 -- | Safe constructor of 'GenesisDelegation' from a list of PSKs.
 mkGenesisDelegation ::
        MonadError Text m
-    => [ProxySKHeavy 'Ver]
+    => [ProxySKHeavy]
     -> m GenesisDelegation
 mkGenesisDelegation psks = do
     unless (allDistinct $ pskIssuerPk <$> psks) $
@@ -38,7 +35,7 @@ mkGenesisDelegation psks = do
 -- | Safe constructor of 'GenesisDelegation' from existing map.
 recreateGenesisDelegation ::
        MonadError Text m
-    => HashMap StakeholderId (ProxySKHeavy 'Ver)
+    => HashMap StakeholderId ProxySKHeavy
     -> m GenesisDelegation
 recreateGenesisDelegation pskMap = do
     forM_ (HM.toList pskMap) $ \(k, psk) -> do
@@ -61,7 +58,7 @@ recreateGenesisDelegation pskMap = do
 -- calling funciton.
 convertNonAvvmDataToBalances
     :: forall m .
-       ( MonadError Text m, Bi Address )
+       ( MonadError Text m, Bi Address)
     => HashMap Text Integer
     -> m GenesisNonAvvmBalances
 convertNonAvvmDataToBalances balances = GenesisNonAvvmBalances <$> balances'

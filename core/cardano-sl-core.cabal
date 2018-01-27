@@ -49,8 +49,6 @@ library
                        Pos.Core.Txp
                        Pos.Core.Update
 
-                       Pos.Core.Verification
-
                        Pos.Data.Attributes
                        Pos.Exception
                        Pos.Merkle

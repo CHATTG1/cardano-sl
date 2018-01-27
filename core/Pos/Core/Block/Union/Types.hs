@@ -13,7 +13,7 @@ module Pos.Core.Block.Union.Types
 
 import           Universum
 
-import           Pos.Binary.Class (Bi)
+import           Pos.Binary.Class (BiEnc)
 import           Pos.Core.Common (HeaderHash)
 import           Pos.Crypto (unsafeHash)
 -- Re-exports
@@ -27,10 +27,10 @@ import           Pos.Util.Some (Some)
 ----------------------------------------------------------------------------
 
 -- | Either header of ordinary main block or genesis block.
-type BlockHeader v = Either (GenesisBlockHeader v) (MainBlockHeader v)
+type BlockHeader = Either GenesisBlockHeader MainBlockHeader
 
 -- | Block.
-type Block v = Either (GenesisBlock v) (MainBlock v)
+type Block = Either GenesisBlock MainBlock
 
 -- | Representation of 'Block' passed to a component.
 data ComponentBlock payload
@@ -43,5 +43,5 @@ data ComponentBlock payload
 --
 -- Perhaps, it shouldn't be here, but I decided not to create a module
 -- for only this function.
-blockHeaderHash :: Bi (BlockHeader v) => BlockHeader v -> HeaderHash
+blockHeaderHash :: BiEnc BlockHeader => BlockHeader -> HeaderHash
 blockHeaderHash = unsafeHash

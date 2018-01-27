@@ -24,27 +24,27 @@ import           Pos.Core.Slotting.Types (EpochOrSlot (..))
 -- Buildable
 ----------------------------------------------------------------------------
 
-instance Bi (BlockHeader v) =>
-         Buildable (BlockHeader v) where
+instance Bi BlockHeader =>
+         Buildable BlockHeader where
     build = either Buildable.build Buildable.build
 
 ----------------------------------------------------------------------------
 -- HasHeaderHash
 ----------------------------------------------------------------------------
 
-instance Bi (BlockHeader v) =>
-         HasHeaderHash (BlockHeader v) where
+instance Bi BlockHeader =>
+         HasHeaderHash BlockHeader where
     headerHash = blockHeaderHash
 
-instance Bi (BlockHeader v) =>
-         HasHeaderHash (Block v) where
+instance Bi BlockHeader =>
+         HasHeaderHash Block where
     headerHash = blockHeaderHash . getBlockHeader
 
 -- | Take 'BlockHeader' from either 'GenesisBlock' or 'MainBlock'.
-getBlockHeader :: Block v -> BlockHeader v
+getBlockHeader :: Block -> BlockHeader
 getBlockHeader = bimap _gbHeader _gbHeader
 
-blockHeader :: Getter (Block v) (BlockHeader v)
+blockHeader :: Getter Block BlockHeader
 blockHeader = to getBlockHeader
 
 instance HasHeaderHash (ComponentBlock a) where
@@ -55,17 +55,17 @@ instance HasHeaderHash (ComponentBlock a) where
 -- HasDifficulty
 ----------------------------------------------------------------------------
 
-instance HasDifficulty (BlockHeader v) where
+instance HasDifficulty BlockHeader where
     difficultyL = choosing difficultyL difficultyL
 
-instance HasDifficulty (Block v) where
+instance HasDifficulty Block where
     difficultyL = choosing difficultyL difficultyL
 
 ----------------------------------------------------------------------------
 -- IsHeader
 ----------------------------------------------------------------------------
 
-instance Bi (BlockHeader v) => IsHeader (BlockHeader v)
+instance Bi BlockHeader => IsHeader BlockHeader
 
 ----------------------------------------------------------------------------
 -- HasPrevBlock
